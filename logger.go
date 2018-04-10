@@ -40,6 +40,13 @@ type Adapter struct {
 	errorChan chan<- error  //接收数据的chan
 }
 
+/**
+factories 注册日志工厂方法，返回logger
+
+receivers 包含logger和chan msg 用来处理消息的
+
+**/
+
 //共存方法返回一个Logger
 type Factory func() Logger
 
@@ -66,8 +73,10 @@ type receiver struct {
 //定义两个chan
 //1 errorChan	2 quitChan
 var (
-	//定义接受者
-	// receivers is a list of loggers with their message channel for broadcasting.
+
+	//接收多个消息的receivers
+	// receivers is a list of loggers with
+	//their message channel for broadcasting.
 	receivers []*receiver
 	//错误chan
 	errorChan = make(chan error, 5)
@@ -75,10 +84,12 @@ var (
 	quitChan = make(chan struct{})
 )
 
+//出事
 func init() {
 	// Start background error handling goroutine.
 	//启动一个协成，用来监控errorChan
 	//如果发生errorChan，调用quitChan
+	//发生错误一直打印，如果出现错误就跳出
 	go func() {
 		for {
 			select {
@@ -90,6 +101,8 @@ func init() {
 		}
 	}()
 }
+
+//把logger和msg注册到receivers中
 
 // New initializes and appends a new logger to the receiver list.
 // Calling this function multiple times will overwrite previous logger with same mode.
@@ -142,7 +155,8 @@ func New(mode MODE, cfg interface{}) error {
 	return nil
 }
 
-//删除一种消息
+//删除一种类型的日志处理器
+//同时弥补空缺
 // Delete removes logger from the receiver list.
 func Delete(mode MODE) {
 	foundIdx := -1

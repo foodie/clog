@@ -107,6 +107,7 @@ func (c *console) Destroy() {
 	close(c.quitChan)
 }
 
+//注册日志
 func init() {
 	Register(CONSOLE, newConsole)
 }
