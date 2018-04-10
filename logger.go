@@ -16,18 +16,19 @@ package clog
 
 import "fmt"
 
+//日志的接口
 // Logger is an interface for a logger adapter with specific mode and level.
 type Logger interface {
 	// Level returns minimum level of given logger.
-	Level() LEVEL
+	Level() LEVEL //级别
 	// Init accepts a config struct specific for given logger and performs any necessary initialization.
-	Init(interface{}) error
+	Init(interface{}) error //初始化
 	// ExchangeChans accepts error channel, and returns message receive channel.
-	ExchangeChans(chan<- error) chan *Message
+	ExchangeChans(chan<- error) chan *Message //改变chan
 	// Start starts message processing.
-	Start()
+	Start() //开始
 	// Destroy releases all resources.
-	Destroy()
+	Destroy() //摧毁
 }
 
 // Adapter contains common fields for any logger adapter. This struct should be used as embedded struct.

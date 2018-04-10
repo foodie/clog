@@ -21,10 +21,12 @@ type ErrConfigObject struct {
 	got    interface{}
 }
 
+//错误日志类
 func (err ErrConfigObject) Error() string {
 	return fmt.Sprintf("config object is not an instance of %s, instead got '%T'", err.expect, err.got)
 }
 
+//日志不可用的错误
 type ErrInvalidLevel struct{}
 
 func (err ErrInvalidLevel) Error() string {
