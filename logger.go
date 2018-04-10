@@ -23,6 +23,8 @@ type Logger interface {
 	Level() LEVEL //级别
 	// Init accepts a config struct specific for given logger and performs any necessary initialization.
 	Init(interface{}) error //初始化
+
+	//传递error，返回Messagechan
 	// ExchangeChans accepts error channel, and returns message receive channel.
 	ExchangeChans(chan<- error) chan *Message //改变chan
 	// Start starts message processing.
@@ -31,11 +33,18 @@ type Logger interface {
 	Destroy() //摧毁
 }
 
+/**
+通用的部分
+	1 级别
+	2 内容的协程
+	3 退出的协程
+	4 错误接收的协程
+**/
 //通用的Adapter
 // Adapter contains common fields for any logger adapter. This struct should be used as embedded struct.
 type Adapter struct {
 	level     LEVEL         //级别
-	msgChan   chan *Message //消息
+	msgChan   chan *Message //Message消息chan
 	quitChan  chan struct{} //退出的chan
 	errorChan chan<- error  //接收数据的chan
 }
@@ -66,7 +75,8 @@ func Register(mode MODE, f Factory) {
 }
 
 type receiver struct {
-	Logger                //日志接口
+	Logger  //日志接口
+	mode    MODE
 	msgChan chan *Message //消息chan
 }
 
@@ -113,7 +123,7 @@ func New(mode MODE, cfg interface{}) error {
 		return fmt.Errorf("unknown mode '%s'", mode)
 	}
 
-	//得到消息
+	//得到一个logger factory
 	logger := factory()
 	//初始化消息
 	if err := logger.Init(cfg); err != nil {
@@ -146,11 +156,11 @@ func New(mode MODE, cfg interface{}) error {
 		//新建一个消息处理器
 		receivers = append(receivers, &receiver{
 			Logger:  logger,
-			mode:    mode,
+			mode:    mode, //新增一个mode？
 			msgChan: msgChan,
 		})
 	}
-	//开始处理消息
+	//异步处理消息
 	go logger.Start()
 	return nil
 }

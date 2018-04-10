@@ -76,7 +76,6 @@ func Write(level LEVEL, skip int, format string, v ...interface{}) {
 	msg := &Message{
 		Level: level,
 	}
-
 	// Only error and fatal information needs locate position for debugging.
 	// But if skip is 0 means caller doesn't care so we can skip.
 

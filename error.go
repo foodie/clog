@@ -16,9 +16,12 @@ package clog
 
 import "fmt"
 
+//错误的定义，
 type ErrConfigObject struct {
+	//错误说明
 	expect string
-	got    interface{}
+	//存储任意的错误类型
+	got interface{}
 }
 
 //错误日志类
