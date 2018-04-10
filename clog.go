@@ -159,7 +159,7 @@ func Shutdown() {
 		if len(errorChan) == 0 {
 			break
 		}
-		//发送数据
+		//打印接收到的error chan的数据
 		fmt.Printf("clog: unable to write message: %v\n", <-errorChan)
 	}
 }

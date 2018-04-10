@@ -31,19 +31,23 @@ type Logger interface {
 	Destroy() //摧毁
 }
 
+//通用的Adapter
 // Adapter contains common fields for any logger adapter. This struct should be used as embedded struct.
 type Adapter struct {
-	level     LEVEL
-	msgChan   chan *Message
-	quitChan  chan struct{}
-	errorChan chan<- error
+	level     LEVEL         //级别
+	msgChan   chan *Message //消息
+	quitChan  chan struct{} //退出的chan
+	errorChan chan<- error  //接收数据的chan
 }
 
+//共存方法返回一个Logger
 type Factory func() Logger
 
+//定义方法集合
 // factories keeps factory function of registered loggers.
 var factories = map[MODE]Factory{}
 
+//注册方法
 func Register(mode MODE, f Factory) {
 	if f == nil {
 		panic("clog: register function is nil")
@@ -55,21 +59,26 @@ func Register(mode MODE, f Factory) {
 }
 
 type receiver struct {
-	Logger
-	mode    MODE
-	msgChan chan *Message
+	Logger                //日志接口
+	msgChan chan *Message //消息chan
 }
 
+//定义两个chan
+//1 errorChan	2 quitChan
 var (
+	//定义接受者
 	// receivers is a list of loggers with their message channel for broadcasting.
 	receivers []*receiver
-
+	//错误chan
 	errorChan = make(chan error, 5)
-	quitChan  = make(chan struct{})
+	//退出的chan
+	quitChan = make(chan struct{})
 )
 
 func init() {
 	// Start background error handling goroutine.
+	//启动一个协成，用来监控errorChan
+	//如果发生errorChan，调用quitChan
 	go func() {
 		for {
 			select {
@@ -85,26 +94,34 @@ func init() {
 // New initializes and appends a new logger to the receiver list.
 // Calling this function multiple times will overwrite previous logger with same mode.
 func New(mode MODE, cfg interface{}) error {
+	//获取一种消息
 	factory, ok := factories[mode]
 	if !ok {
 		return fmt.Errorf("unknown mode '%s'", mode)
 	}
 
+	//得到消息
 	logger := factory()
+	//初始化消息
 	if err := logger.Init(cfg); err != nil {
 		return err
 	}
+	//接收errorChan，返回一个消息chan
 	msgChan := logger.ExchangeChans(errorChan)
 
 	// Check and replace previous logger.
+	//是否找到
 	hasFound := false
 	for i := range receivers {
+		//找到一种类型的消息处理器
 		if receivers[i].mode == mode {
 			hasFound = true
 
+			//是否前一个logger
 			// Release previous logger.
 			receivers[i].Destroy()
 
+			//定义日志和消息处理器
 			// Update info to new one.
 			receivers[i].Logger = logger
 			receivers[i].msgChan = msgChan
@@ -112,17 +129,20 @@ func New(mode MODE, cfg interface{}) error {
 		}
 	}
 	if !hasFound {
+		//如果没有找到
+		//新建一个消息处理器
 		receivers = append(receivers, &receiver{
 			Logger:  logger,
 			mode:    mode,
 			msgChan: msgChan,
 		})
 	}
-
+	//开始处理消息
 	go logger.Start()
 	return nil
 }
 
+//删除一种消息
 // Delete removes logger from the receiver list.
 func Delete(mode MODE) {
 	foundIdx := -1
@@ -133,6 +153,7 @@ func Delete(mode MODE) {
 		}
 	}
 
+	//拷贝receiver
 	if foundIdx >= 0 {
 		newList := make([]*receiver, len(receivers)-1)
 		copy(newList, receivers[:foundIdx])
