@@ -81,9 +81,11 @@ func Write(level LEVEL, skip int, format string, v ...interface{}) {
 
 	//如果Level == ERROR且存在skip
 	if msg.Level >= ERROR && skip > 0 {
+		//Caller报告当前go程调用栈所执行的函数的文件和行号信息。
 		pc, file, line, ok := runtime.Caller(skip)
 		if ok {
 			// Get caller function name.
+			//返回一个表示调用栈标识符pc对应的调用栈的*Func；
 			fn := runtime.FuncForPC(pc)
 			var fnName string
 			if fn == nil {
